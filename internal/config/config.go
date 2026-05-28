@@ -19,6 +19,10 @@ func (cfg *Config) SetUser(Username string) error {
 	return write(*cfg)
 }
 
+func (cfg *Config) GetCurrentUser() string {
+	return cfg.CurrentUsername
+}
+
 func write(cfg Config) error {
 	path, err := getConfigFile()
 	if err != nil {
