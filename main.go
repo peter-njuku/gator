@@ -51,6 +51,9 @@ func main() {
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerGetAllUsers)
+	cmds.register("agg", handlerAgg)
+	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("feeds", handlerAllFeeds)
 
 	if err := cmds.run(s, cmd); err != nil {
 		log.Fatalf("Command failed: %v", err)

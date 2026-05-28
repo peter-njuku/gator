@@ -5,8 +5,9 @@ A command-line application for managing user authentication and database operati
 ## Features
 
 - User login and registration
+- List all users
 - PostgreSQL database integration
-- Configuration management
+- Configuration management via `~/.gatorconfig.json`
 - Command-based CLI interface
 - Type-safe database queries via sqlc
 
@@ -44,28 +45,54 @@ cd gator
 go mod download
 ```
 
-3. Set up the database:
+3. Set up the PostgreSQL database:
 ```bash
-# Create a PostgreSQL database and run migrations
-psql -U postgres -d gator < sql/schema/001_user.sql
+createdb gator
+psql -d gator < sql/schema/001_user.sql
+```
+
+4. Create a config file at `~/.gatorconfig.json` with your database URL:
+```json
+{
+  "db_url": "postgres://user:password@localhost/gator?sslmode=disable",
+  "username": ""
+}
 ```
 
 ## Usage
 
+The application uses commands in the form `go run . <command> [args]`.
+
 ### Register a new user
 ```bash
-go run main.go register
+go run . register alice
 ```
 
-### Login
+### Login as an existing user
 ```bash
-go run main.go login
+go run . login alice
+```
+
+### List all users
+```bash
+go run . users
+```
+
+### Reset the database
+```bash
+go run . reset
 ```
 
 ## Building
 
+Build the application:
 ```bash
-go build
+go build -o gator
+```
+
+Then run it:
+```bash
+./gator users
 ```
 
 ## Dependencies

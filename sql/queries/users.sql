@@ -12,8 +12,11 @@ RETURNING *;
 SELECT * FROM users
 where Name = $1 limit 1;
 
--- name: DeleteUserTable :exec
-DROP TABLE IF EXISTS users;
+-- name: DeleteAllUsers :exec
+DELETE FROM users;
 
 -- name: GetUsers :many
 SELECT * FROM users;
+
+-- name: GetUserById :one
+SELECT * FROM users WHERE id = $1;

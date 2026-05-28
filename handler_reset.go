@@ -6,7 +6,7 @@ import (
 )
 
 func handlerReset(s *state, cmd command) error {
-	err := s.db.DeleteUserTable(context.Background())
+	err := s.db.DeleteAllUsers(context.Background())
 	if err != nil {
 		return fmt.Errorf("Could not delete users: %w", err)
 	}
