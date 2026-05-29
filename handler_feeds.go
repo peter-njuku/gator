@@ -9,14 +9,9 @@ import (
 	"github.com/peter-njuku/gator/internal/database"
 )
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 2 {
 		fmt.Printf("Usage: %s <name> <url>", cmd.Name)
-	}
-
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUsername)
-	if err != nil {
-		return fmt.Errorf("Could not get user: %w", err)
 	}
 
 	name := cmd.Args[0]
@@ -35,8 +30,17 @@ func handlerAddFeed(s *state, cmd command) error {
 		return fmt.Errorf("Could not create feed: %w", err)
 	}
 
+	_, err = s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		UserID: user.ID,
+		FeedID: feed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("Feed created but could not follow: %w", err)
+	}
+
 	fmt.Println("Feed create successfully")
 	printFeed(feed, user)
+	fmt.Println("\nYou are now following this feed")
 	fmt.Println("=====================================\nEOF\n=====================================")
 	return nil
 }
