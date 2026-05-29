@@ -16,7 +16,7 @@ func handlerAddFeed(s *state, cmd command) error {
 
 	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUsername)
 	if err != nil {
-		fmt.Errorf("Could not get user: %w", err)
+		return fmt.Errorf("Could not get user: %w", err)
 	}
 
 	name := cmd.Args[0]
