@@ -57,6 +57,7 @@ func main() {
 	cmds.register("follow", middlewareLoggedIn(handlerFollow))
 	cmds.register("following", middlewareLoggedIn(handlerFollowing))
 	cmds.register("unfollow", middlewareLoggedIn(handlerUnfollow))
+	cmds.register("browse", middlewareLoggedIn(handlerBrowser))
 
 	if err := cmds.run(s, cmd); err != nil {
 		log.Fatalf("Command failed: %v", err)

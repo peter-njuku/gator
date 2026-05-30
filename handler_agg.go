@@ -1,16 +1,26 @@
 package main
 
 import (
-	"context"
+	"errors"
 	"fmt"
+	"time"
 )
 
 func handlerAgg(s *state, cmd command) error {
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
-	if err != nil {
-		return fmt.Errorf("Could not fetch feed: %w", err)
+	if len(cmd.Args) < 1 {
+		return errors.New("Argument for time between requests should be provided")
 	}
-	fmt.Println("Feed:")
-	fmt.Println(feed)
+	time_btn_req := cmd.Args[0]
+	duration, err := time.ParseDuration(time_btn_req)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("Collecting feeds every %s", time_btn_req)
+	tick := time.NewTicker(duration)
+	for range tick.C {
+		if err := scrapeFeeds(s); err != nil {
+			return err
+		}
+	}
 	return nil
 }
