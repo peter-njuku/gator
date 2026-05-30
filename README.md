@@ -28,30 +28,43 @@ gator/
 
 ## Requirements
 
-- Go 1.24.4 or later
-- PostgreSQL
-- sqlc CLI (for code generation)
+- **Go 1.24.4** or later
+- **PostgreSQL** 12 or later
+
+Ensure both are installed and accessible from your command line before proceeding.
 
 ## Installation
 
-1. Clone the repository:
+### 1. Install the gator CLI
+
+Use `go install` to install the gator CLI directly:
+
 ```bash
-git clone https://github.com/peter-njuku/gator.git
-cd gator
+go install github.com/peter-njuku/gator@latest
 ```
 
-2. Install dependencies:
-```bash
-go mod download
-```
+This will install the `gator` executable in your `$GOPATH/bin` directory (typically `~/go/bin`). Make sure this directory is in your `$PATH`.
 
-3. Set up the PostgreSQL database:
+### 2. Set up PostgreSQL
+
+Create a new database for gator:
+
 ```bash
 createdb gator
+```
+
+Initialize the database schema:
+
+```bash
 psql -d gator < sql/schema/001_user.sql
 ```
 
-4. Create a config file at `~/.gatorconfig.json` with your database URL:
+(You'll need to clone the repository to access the schema file if you haven't already.)
+
+### 3. Configure gator
+
+Create a configuration file at `~/.gatorconfig.json`:
+
 ```json
 {
   "db_url": "postgres://user:password@localhost/gator?sslmode=disable",
@@ -59,40 +72,47 @@ psql -d gator < sql/schema/001_user.sql
 }
 ```
 
+Replace `user` and `password` with your PostgreSQL credentials. The `username` field will be populated when you log in.
+
 ## Usage
 
-The application uses commands in the form `go run . <command> [args]`.
+Once installed, run commands using:
 
-### Register a new user
 ```bash
-go run . register alice
+gator <command> [args]
 ```
 
-### Login as an existing user
+### Available Commands
+
+**Register a new user:**
 ```bash
-go run . login alice
+gator register alice
 ```
 
-### List all users
+**Login as an existing user:**
 ```bash
-go run . users
+gator login alice
 ```
 
-### Reset the database
+**List all users:**
 ```bash
-go run . reset
+gator users
 ```
 
-## Building
-
-Build the application:
+**Reset the database:**
 ```bash
+gator reset
+```
+
+## Building from Source
+
+If you prefer to build locally instead of using `go install`:
+
+```bash
+git clone https://github.com/peter-njuku/gator.git
+cd gator
 go build -o gator
-```
-
-Then run it:
-```bash
-./gator users
+./gator <command>
 ```
 
 ## Dependencies
