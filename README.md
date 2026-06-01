@@ -246,3 +246,44 @@ go build -o gator
 - `github.com/google/uuid` - UUID generation
 - `github.com/lib/pq` - PostgreSQL driver for Go
 - `github.com/sqlc-dev/sqlc` - SQL code generation
+
+# Problems I found
+1. On login, if the user cancels the program on the enter password phase, the echo capabilities of my 
+terminal would not work. I had to ask my Chinese friend deepseek. This helped and I had to handle 
+some syscall command. I did not anticipate for this but it finally worked.
+
+```go
+ar passwordBytes []byte
+	for {
+		var b [1]byte
+		_, err := os.Stdin.Read(b[:])
+		if err != nil {
+			return "", err
+		}
+
+		//ctrl + c
+		if b[0] == 0x03 {
+			return "", fmt.Errorf("Interrupted")
+		}
+
+		// Enter or Return
+		if b[0] == '\r' || b[0] == '\n' {
+			break
+		}
+
+		//Deleting Backspace
+		if b[0] == 127 || b[0] == 8 {
+			if len(passwordBytes) > 0 {
+				passwordBytes = passwordBytes[:len(passwordBytes)-1]
+				fmt.Print("\b \b")
+			}
+			continue
+		}
+
+		passwordBytes = append(passwordBytes, b[0])
+		fmt.Print("")
+	}
+
+	fmt.Println()
+  ```
+Thank you [Deepseek](https://chat.deepseek.com/)

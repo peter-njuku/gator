@@ -130,6 +130,7 @@ func readPassword(prompt string) (string, error) {
 			break
 		}
 
+		//Deleting Backspace
 		if b[0] == 127 || b[0] == 8 {
 			if len(passwordBytes) > 0 {
 				passwordBytes = passwordBytes[:len(passwordBytes)-1]
