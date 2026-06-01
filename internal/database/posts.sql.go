@@ -51,13 +51,7 @@ JOIN feed_follows ff ON ff.feed_id = p.feed_id
 JOIN feeds f ON p.feed_id = f.id
 WHERE ff.user_id = $1
 ORDER BY p.published_at DESC
-LIMIT $2
 `
-
-type GetPostForUserParams struct {
-	UserID uuid.UUID
-	Limit  int32
-}
 
 type GetPostForUserRow struct {
 	ID          uuid.UUID
@@ -71,8 +65,8 @@ type GetPostForUserRow struct {
 	FeedName    string
 }
 
-func (q *Queries) GetPostForUser(ctx context.Context, arg GetPostForUserParams) ([]GetPostForUserRow, error) {
-	rows, err := q.db.QueryContext(ctx, getPostForUser, arg.UserID, arg.Limit)
+func (q *Queries) GetPostForUser(ctx context.Context, userID uuid.UUID) ([]GetPostForUserRow, error) {
+	rows, err := q.db.QueryContext(ctx, getPostForUser, userID)
 	if err != nil {
 		return nil, err
 	}

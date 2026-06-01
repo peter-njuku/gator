@@ -104,6 +104,140 @@ gator users
 gator reset
 ```
 
+## Command Reference
+
+### Authentication
+
+**`register <username>`**
+
+Create a new user account. Prompts for password interactively (input is hidden). Password confirmation is required.
+
+```bash
+gator register alice
+# (prompts for password and confirmation)
+```
+
+**`login <username>`**
+
+Log in as an existing user. Prompts for password interactively (input is hidden). Sets the username in your config for subsequent commands.
+
+Note: Press Ctrl+C to cancel safely without breaking terminal echo.
+
+```bash
+gator login alice
+# (prompts for password)
+```
+
+### User Management
+
+**`users`**
+
+List all registered users in the database.
+
+```bash
+gator users
+```
+
+**`reset`**
+
+Reset the database by deleting all users and associated data. Use with caution.
+
+```bash
+gator reset
+```
+
+### Feed Management
+
+**`addfeed <feed_name> <feed_url>`**
+
+Add a new feed and automatically follow it. Requires being logged in. Both name and URL are required.
+
+```bash
+gator addfeed "Hacker News" "https://news.ycombinator.com/rss"
+```
+
+**`feeds`**
+
+List all feeds in the database (regardless of whether you follow them).
+
+```bash
+gator feeds
+```
+
+**`follow <feed_url>`**
+
+Follow an existing feed by URL. Requires being logged in.
+
+```bash
+gator follow "https://news.ycombinator.com/rss"
+```
+
+**`following`**
+
+List all feeds the currently logged-in user is following.
+
+```bash
+gator following
+```
+
+**`unfollow <feed_url>`**
+
+Stop following a feed. Requires being logged in.
+
+```bash
+gator unfollow "https://news.ycombinator.com/rss"
+```
+
+### Feed Aggregation
+
+**`agg <duration>`**
+
+Run the feed aggregator in a continuous loop. Fetches new posts from all feeds at the specified interval.
+
+Duration format: `10s`, `1m`, `5m30s`, etc.
+
+```bash
+gator agg 30s
+# Fetches feeds every 30 seconds (runs until Ctrl+C)
+
+gator agg 1m
+# Fetches feeds every 1 minute
+```
+
+### Browsing Posts
+
+**`browse [limit] [--feed <feed_filter>] [--sort {asc|desc}]`**
+
+Browse recent posts from followed feeds. Requires being logged in.
+
+Options:
+- `limit` (optional, default: 2) — Number of posts to display
+- `--feed <filter>` — Filter posts by feed name (case-insensitive substring matching)
+- `--sort {asc|desc}` (default: desc) — Sort by publication date; `asc` shows oldest first, `desc` shows newest first
+
+```bash
+# Show 2 most recent posts
+gator browse
+
+# Show 10 most recent posts
+gator browse 10
+
+# Show 5 posts sorted by oldest first
+gator browse 5 --sort asc
+
+# Show 10 posts from feeds matching "news" (case-insensitive)
+gator browse 10 --feed news
+
+# Combine filters: 20 posts from "golang" feeds, oldest first
+gator browse 20 --feed golang --sort asc
+```
+
+### Notes on Commands
+
+- Commands requiring login (addfeed, follow, unfollow, following, browse) will fail if no user is set in `~/.gatorconfig.json`
+- Password entry is fully interactive and handles Ctrl+C safely without breaking your terminal
+- Feed name filtering in `browse` uses case-insensitive substring matching (e.g., `--feed python` matches "Python Weekly" and "python-news")
+
 ## Development
 
 ### Setting up the development environment
@@ -287,3 +421,4 @@ ar passwordBytes []byte
 	fmt.Println()
   ```
 Thank you [Deepseek](https://chat.deepseek.com/)
+```
