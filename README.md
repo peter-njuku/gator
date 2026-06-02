@@ -232,11 +232,37 @@ gator browse 10 --feed news
 gator browse 20 --feed golang --sort asc
 ```
 
+### Terminal User Interface
+
+**`tui`**
+
+Launch an interactive terminal user interface for gator. The TUI provides a modern, keyboard-friendly interface for:
+- Logging in with a visual form
+- Browsing posts from your feeds
+- Navigating feeds and posts
+
+Navigate using arrow keys, Tab to move between fields, Enter to select, and Ctrl+C to exit.
+
+```bash
+gator tui
+# Opens interactive login screen, then posts browser
+```
+
+**`gator tui register`**
+
+Open the TUI directly in registration mode. This launches the registration form (username, password, confirm). On successful registration the app switches to the posts browser for the newly created user.
+
+```bash
+gator tui register
+# Opens TUI registration screen; after success, shows posts browser
+```
+
 ### Notes on Commands
 
-- Commands requiring login (addfeed, follow, unfollow, following, browse) will fail if no user is set in `~/.gatorconfig.json`
+- Commands requiring login (addfeed, follow, unfollow, following, browse, tui) will fail if no user is set in `~/.gatorconfig.json`
 - Password entry is fully interactive and handles Ctrl+C safely without breaking your terminal
 - Feed name filtering in `browse` uses case-insensitive substring matching (e.g., `--feed python` matches "Python Weekly" and "python-news")
+- The `tui` command provides a graphical interface and does not require a pre-set user (login is handled within the TUI)
 
 ## Development
 
