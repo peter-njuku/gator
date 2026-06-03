@@ -7,8 +7,12 @@ import (
 	"html"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/google/uuid"
 	"github.com/peter-njuku/gator/internal/database"
 )
@@ -129,4 +133,128 @@ func printFeed(feed database.Feed, user database.User) {
 	fmt.Printf("* URL:           	%s\n", feed.Url)
 	fmt.Printf("* UserID:        	%s\n", feed.UserID)
 	fmt.Printf("* Owners Name:      	%s\n", user.Name)
+}
+
+// Functions of TUI - Feeds
+type addFeedModel struct {
+	inputs     []textinput.Model
+	focusIndex int
+	errMsg     string
+	state      *state
+	user       *database.User
+	done       bool
+}
+
+func (m addFeedModel) Init() tea.Cmd {
+	return textinput.Blink
+}
+
+func (m addFeedModel) View() string {
+	var b strings.Builder
+	b.WriteString("Add a new RSS feed\n\n")
+	for i, input := range m.inputs {
+		b.WriteString(input.View())
+		if i < len(m.inputs)-1 {
+			b.WriteRune('\n')
+		}
+	}
+
+	b.WriteString("\n\n")
+
+	if m.errMsg != "" {
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render("✗" + m.errMsg + "\n"))
+	}
+	b.WriteString("(Tab to switch, Enter/Return to submit, Ctrl+c to quit)")
+
+	return b.String()
+}
+
+func (m addFeedModel) updateInputs(msg tea.Msg) tea.Cmd {
+	cmds := make([]tea.Cmd, len(m.inputs))
+	for i := range m.inputs {
+		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
+	}
+	cmd := tea.Batch(cmds...)
+	return cmd
+}
+
+func newAddFeedModel(s *state, user *database.User) addFeedModel {
+	m := addFeedModel{
+		inputs: make([]textinput.Model, 2),
+		user:   user,
+		state:  s,
+	}
+
+	m.inputs[0] = textinput.New()
+	m.inputs[0].Placeholder = "Feed name"
+	m.inputs[0].Focus()
+
+	m.inputs[1] = textinput.New()
+	m.inputs[1].Placeholder = "Feed URL"
+
+	return m
+}
+
+func (m addFeedModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c":
+			return m, tea.Quit
+		case "enter":
+			if m.focusIndex == len(m.inputs)-1 {
+				name := m.inputs[0].Value()
+				url := m.inputs[1].Value()
+
+				if name == "" || url == "" {
+					m.errMsg = "Both fields are required"
+					return m, nil
+				}
+
+				feed, err := m.state.db.CreateFeed(context.Background(), database.CreateFeedParams{
+					ID:        uuid.New(),
+					CreatedAt: time.Now().UTC(),
+					UpdatedAt: time.Now().UTC(),
+					Name:      name,
+					Url:       url,
+					UserID:    m.user.ID,
+				})
+				if err != nil {
+					m.errMsg = "Could not create RSS Feed. TRy again later" + err.Error()
+					return m, nil
+				}
+
+				_, err = m.state.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+					UserID: m.user.ID,
+					FeedID: feed.ID,
+				})
+				if err != nil {
+					m.errMsg = "Could not Auto-Follow the feed" + err.Error()
+					return m, nil
+				}
+				m.done = true
+				return m, nil
+			}
+
+			m.inputs[m.focusIndex].Blur()
+			m.focusIndex++
+			m.inputs[m.focusIndex].Focus()
+			return m, nil
+		case "tab", "shift+tab":
+			m.inputs[m.focusIndex].Blur()
+			if msg.String() == "tab" {
+				m.focusIndex = (m.focusIndex + 1) % len(m.inputs)
+			} else {
+				m.focusIndex--
+				if m.focusIndex < 0 {
+					m.focusIndex = len(m.inputs) - 1
+				}
+			}
+
+			m.inputs[m.focusIndex].Focus()
+			return m, nil
+		}
+	}
+	cmd := m.updateInputs(msg)
+	return m, cmd
 }
