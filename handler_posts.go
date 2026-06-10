@@ -4,6 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"log"
+	"os"
 	"os/exec"
 	"runtime"
 	"sort"
@@ -14,6 +16,7 @@ import (
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/term"
 	"github.com/peter-njuku/gator/internal/database"
 )
 
@@ -137,6 +140,8 @@ func handlerBrowser(s *state, cmd command, user database.User) error {
 // Functions on posts in TUI
 // --------- Post List Model ---------
 
+type refreshPostsMsg struct{}
+
 type postItem struct {
 	title, url, feedName, publishedAt string
 }
@@ -149,6 +154,7 @@ type postsModel struct {
 	context      context.Context
 	showAddFeed  bool
 	addFeedModel addFeedModel
+	program      *tea.Program
 }
 
 func (i postItem) Title() string {
@@ -184,15 +190,25 @@ func (m postsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.addFeedModel.done {
 			m.showAddFeed = false
 			newList, err := refreshPostsLists(m.state, &m.user)
-			if err != nil {
-				return m, nil
+			if err == nil {
+				m.list = newList
 			}
-			m.list = newList
+			w, h, err := getWindowSize()
+			if err == nil {
+				return m, func() tea.Msg { return tea.WindowSizeMsg{Width: w, Height: h} }
+			}
+			return m, nil
 		}
 
 		return m, cmd
 	}
 	switch msg := msg.(type) {
+	case refreshPostsMsg:
+		newLists, err := refreshPostsLists(m.state, &m.user)
+		if err == nil {
+			m.list = newLists
+		}
+		return m, nil
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "q", "ctrl+c":
@@ -222,7 +238,7 @@ func (m postsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func newPostsModel(user database.User, s *state) (postsModel, error) {
+func newPostsModel(user database.User, s *state, program *tea.Program) (postsModel, error) {
 	postsDb, err := s.db.GetPostForUser(context.Background(), user.ID)
 	if err != nil {
 		return postsModel{}, err
@@ -242,13 +258,22 @@ func newPostsModel(user database.User, s *state) (postsModel, error) {
 	postList := list.New(items, delegate, 80, 20)
 	postList.Title = "Your Posts (press 'o' to open in browser, 'q' to quit)"
 	postList.SetFilteringEnabled(true)
-	return postsModel{
+	m := postsModel{
 		list:    postList,
 		db:      s.db,
 		user:    user,
 		state:   s,
 		context: context.Background(),
-	}, nil
+		program: program,
+	}
+	go m.startBackgroundScraper()
+	return m, nil
+}
+
+func (m *postsModel) startBackgroundScraper() {
+	if err := scrapeFeeds(m.state, m.program); err != nil {
+		log.Printf("Error scraping feeds: %v\n", err)
+	}
 }
 
 // Open URL in different platorms
@@ -291,4 +316,9 @@ func refreshPostsLists(s *state, user *database.User) (list.Model, error) {
 	postsLists.SetFilteringEnabled(true)
 
 	return postsLists, nil
+}
+
+// Get window Size
+func getWindowSize() (width, height int, err error) {
+	return term.GetSize(os.Stdout.Fd())
 }

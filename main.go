@@ -2,21 +2,22 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"os"
 
 	"github.com/peter-njuku/gator/internal/config"
 	"github.com/peter-njuku/gator/internal/database"
+	"github.com/peter-njuku/gator/internal/logging"
 
 	_ "github.com/lib/pq"
 )
 
-type state struct {
-	db  *database.Queries
-	cfg *config.Config
-}
-
 func main() {
+	if err := logging.Init(); err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to init logging: %v\n", err)
+	}
+	defer logging.Close()
 	cfg, err := config.Read()
 	if err != nil {
 		log.Fatalf("Unable to Read config file: %v", err)

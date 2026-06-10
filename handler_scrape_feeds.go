@@ -5,15 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/google/uuid"
 	"github.com/peter-njuku/gator/internal/database"
 )
 
-func scrapeFeeds(s *state) error {
+func scrapeFeeds(s *state, program *tea.Program) error {
 	for {
 		feed, err := s.db.GetNextFeedToFetch(context.Background())
 		if err != nil {
@@ -24,10 +26,10 @@ func scrapeFeeds(s *state) error {
 			return fmt.Errorf("Error getting next feed: %w", err)
 		}
 
-		fmt.Printf("Fetching feed: %s\n", feed.Name)
+		log.Printf("Fetching feed: %s\n", feed.Name)
 		rssFeed, err := fetchFeed(context.Background(), feed.Url)
 		if err != nil {
-			fmt.Printf("Error fetching feed: %s (%s)", feed.Name, feed.Url)
+			log.Printf("Error fetching feed: %s (%s)", feed.Name, feed.Url)
 			err = s.db.MarkFeedFetched(context.Background(), feed.ID)
 			if err != nil {
 				return fmt.Errorf("Could not mark feed as fetched: %w", err)
@@ -41,17 +43,17 @@ func scrapeFeeds(s *state) error {
 			return fmt.Errorf("Could not mark feed as fetched: %w", err)
 		}
 
-		fmt.Printf("Processing %d posts from %s....\n", len(rssFeed.Channel.Item), feed.Name)
+		log.Printf("Processing %d posts from %s....\n", len(rssFeed.Channel.Item), feed.Name)
 
 		for _, item := range rssFeed.Channel.Item {
 			if item.Title == "" || item.Link == "" {
-				fmt.Println("Skipping post with no title ot link...")
+				log.Println("Skipping post with no title ot link...")
 				continue
 			}
 
 			publishedAt, err := parsePublishedAt(item.PubDate)
 			if err != nil {
-				fmt.Printf("Warning: %s for post %s", err, item.Title)
+				log.Printf("Warning: %s for post %s", err, item.Title)
 				publishedAt = time.Now().UTC()
 			}
 
@@ -70,11 +72,15 @@ func scrapeFeeds(s *state) error {
 				if strings.Contains(err.Error(), "duplicate key") || strings.Contains(err.Error(), "unique constraint") {
 					continue
 				}
-				fmt.Printf("Error saving post '%s' : %v\n", item.Title, err)
+				log.Printf("Error saving post '%s' : %v\n", item.Title, err)
 			}
 		}
-		fmt.Printf("Successfully processed feed: %s\n", feed.Name)
-		fmt.Println("=====================================")
+		log.Printf("Successfully processed feed: %s\n", feed.Name)
+		log.Println("=====================================")
+
+		if program != nil {
+			program.Send(refreshPostsMsg{})
+		}
 
 		time.Sleep(10 * time.Second)
 	}

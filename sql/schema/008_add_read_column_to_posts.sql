@@ -1,0 +1,5 @@
+-- +goose Up
+ALTER TABLE posts ADD COLUMN read BOOLEAN NOT NULL DEFAULT FALSE;
+
+-- +gooose Down
+ALTER TABLE posts DROP COLUMN read;

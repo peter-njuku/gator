@@ -2,7 +2,15 @@ package main
 
 import (
 	"errors"
+
+	"github.com/peter-njuku/gator/internal/config"
+	"github.com/peter-njuku/gator/internal/database"
 )
+
+type state struct {
+	db  *database.Queries
+	cfg *config.Config
+}
 
 type command struct {
 	Name string

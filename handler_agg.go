@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 func handlerAgg(s *state, cmd command) error {
@@ -18,9 +20,18 @@ func handlerAgg(s *state, cmd command) error {
 	fmt.Printf("Collecting feeds every %s", time_btn_req)
 	tick := time.NewTicker(duration)
 	for range tick.C {
-		if err := scrapeFeeds(s); err != nil {
+		if err := scrapeFeeds(s, nil); err != nil {
 			return err
 		}
 	}
+	return nil
+}
+
+func handlerAggTUI(s *state, program *tea.Program) error {
+	go func() {
+		if err := scrapeFeeds(s, program); err != nil {
+			fmt.Printf("Error scraping feeds: %v", err)
+		}
+	}()
 	return nil
 }

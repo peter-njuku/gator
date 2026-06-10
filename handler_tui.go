@@ -20,13 +20,16 @@ func handlerTui(s *state, cmd command) error {
 		if !regResult.readyToSwitch {
 			return nil
 		}
-		postsUI, err := newPostsModel(*regResult.user, s)
+		postsUI, err := newPostsModel(*regResult.user, s, nil)
 		if err != nil {
 			return fmt.Errorf("Could not diplay posts: %w", err)
 		}
-		_, err = tea.NewProgram(postsUI, tea.WithAltScreen()).Run()
+		p = tea.NewProgram(postsUI, tea.WithAltScreen())
+		postsUI.program = p
+		_, err = p.Run()
 		return err
 	}
+
 	login := newLoginModel(s)
 	p := tea.NewProgram(login, tea.WithAltScreen())
 	finalModel, err := p.Run()
@@ -39,10 +42,13 @@ func handlerTui(s *state, cmd command) error {
 		return nil
 	}
 
-	postsUI, err := newPostsModel(*loginResult.user, s)
+	postsUI, err := newPostsModel(*loginResult.user, s, nil)
 	if err != nil {
 		return fmt.Errorf("Could not diplay posts: %w", err)
 	}
-	_, err = tea.NewProgram(postsUI, tea.WithAltScreen()).Run()
+	p = tea.NewProgram(postsUI, tea.WithAltScreen())
+	postsUI.program = p
+	_, err = p.Run()
+
 	return err
 }

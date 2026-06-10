@@ -220,8 +220,16 @@ func (m addFeedModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					UserID:    m.user.ID,
 				})
 				if err != nil {
-					m.errMsg = "Could not create RSS Feed. TRy again later" + err.Error()
-					return m, nil
+					_, err := m.state.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+						UserID: m.user.ID,
+						FeedID: feed.ID,
+					})
+					if err != nil {
+						m.errMsg = "Could not create follow for the feed" + err.Error()
+					} else {
+						m.errMsg = "Could not create RSS Feed. TRy again later"
+						return m, nil
+					}
 				}
 
 				_, err = m.state.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
@@ -230,6 +238,11 @@ func (m addFeedModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				})
 				if err != nil {
 					m.errMsg = "Could not Auto-Follow the feed" + err.Error()
+					return m, nil
+				}
+				err = handlerAggTUI(m.state, nil)
+				if err != nil {
+					m.errMsg = "HAnlder AgG is FuCked like sHiT"
 					return m, nil
 				}
 				m.done = true

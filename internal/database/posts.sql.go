@@ -97,3 +97,34 @@ func (q *Queries) GetPostForUser(ctx context.Context, userID uuid.UUID) ([]GetPo
 	}
 	return items, nil
 }
+
+const getUnreadNumberForUser = `-- name: GetUnreadNumberForUser :one
+SELECT COUNT(*) FROM posts p
+JOIN feed_follows ff ON ff.feed_id = p.feed_id
+WHERE ff.user_id = $1 AND p.read = False
+`
+
+func (q *Queries) GetUnreadNumberForUser(ctx context.Context, userID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUnreadNumberForUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const markPostAsRead = `-- name: MarkPostAsRead :exec
+UPDATE posts SET read = TRUE, UPDATED_AT = NOW() WHERE id = $1
+`
+
+func (q *Queries) MarkPostAsRead(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, markPostAsRead, id)
+	return err
+}
+
+const markPostAsUnread = `-- name: MarkPostAsUnread :exec
+UPDATE posts SET read = FALSE, UPDATED_AT = NOW() WHERE id = $1
+`
+
+func (q *Queries) MarkPostAsUnread(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, markPostAsUnread, id)
+	return err
+}
